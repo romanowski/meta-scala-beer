@@ -1,7 +1,8 @@
 TODOs:
 
 1. implement simple macro bar
-2.
+2. asych bartender
+3. age check
 
 
 
