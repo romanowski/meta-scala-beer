@@ -1,0 +1,4 @@
+<plugin>
+	<name>pluginpub</name>
+	<classname>pl.typosafe.scala.meta.pluginpub.IdMakerPlugin</classname>
+</plugin>

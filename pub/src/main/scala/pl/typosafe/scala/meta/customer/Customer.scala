@@ -6,8 +6,8 @@ import pl.typosafe.scala.meta.pub.{ Bartender, Pub }
 /**
  * Author: Krzysztof Romanowski
  */
-class Customer(pub: Pub)(wants: Seq[Drink]) {
-  final def goToPub(): Seq[Drink] = pub.order(bt => wants.foreach(bt.order))
+trait Customer {
+  def wants: Drink
 }
 
 trait HasId {
@@ -16,4 +16,15 @@ trait HasId {
 
 trait HasPassport {
   def ageFromPassport: Int
+
+  def age = 25
 }
+
+case class AnyCustomer(wants: Drink) extends Customer
+
+case class LocalCustomer(wants: Drink, age: Int) extends Customer
+
+case class CustomerWithId(wants: Drink, ageFromId: Int) extends Customer with HasId
+
+case class CustomerWithPassport(wants: Drink, ageFromPassport: Int) extends Customer with HasPassport
+

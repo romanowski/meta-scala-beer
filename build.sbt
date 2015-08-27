@@ -2,19 +2,38 @@ name := "meta-scala-beer"
 
 version := "1.0"
 
-scalaVersion := "2.11.7"
+val scalaVersionString = "2.11.7"
 
-def withTests = libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "2.2.3" % "test"
+
+
+
+def globalSettings = Seq(
+  scalaVersion := scalaVersionString,
+  scalacOptions ++= Seq(
+    "-deprecation",
+    "-unchecked",
+    "-feature",
+    "-Xlint",
+    "-Xfatal-warnings"
+  ),
+  libraryDependencies += "org.scalatest" %% "scalatest" % "2.2.3" % "test",
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersionString,
+  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersionString
 )
 
 
-lazy val pub = project settings {
-  withTests
-}
+lazy val pluginPub = project settings (globalSettings: _*)
 
-lazy val macropub = project dependsOn pub settings (
-  libraryDependencies <+= scalaVersion("org.scala-lang" % "scala-compiler" % _)
-  )
+val location = "pluginPub/target/scala-2.11/"
 
-lazy val pluginPub = project dependsOn pub
+val pluginLocation = (file("pluginPub") / "target" / "scala-2.11" ** "*.jar").get.head.getAbsolutePath
+
+def withPubPlugin = Seq(
+  unmanagedJars +=
+  scalacOptions += "-Xplugin"
+)
+
+
+lazy val pub = project dependsOn pluginPub settings (globalSettings: _*) settings (withPubPlugin: _*)
+
+lazy val macropub = project dependsOn pub settings (globalSettings: _*)

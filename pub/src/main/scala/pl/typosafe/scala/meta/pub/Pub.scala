@@ -19,9 +19,7 @@ abstract class Pub() {
     Thread.sleep(timeToPrepare)
   }
 
-  protected def askBartender = new Bartender(this)
-
-  def order(makeOrder: Bartender => Unit): Seq[Drink]
+  protected final def askBartender = new Bartender(this)
 }
 
 case class NoSuchDrinkInMenu(drink: Drink) extends RuntimeException(s"$drink: No such drink in menu. Sorry")
