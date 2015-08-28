@@ -9,8 +9,12 @@ object MacroPub {
 
   def pubMacro(c: Context)(makeOrder: c.Expr[(Bartender) => Unit]): c.Expr[Seq[Drink]] = {
     import c.universe._
-
-    c.Expr( q"""Nil""")
+    c.Expr(
+      q"""
+         val bt = Pub.askBartender()
+         $makeOrder(bt)
+         Pub.finalizeOrder(bt)
+       """)
   }
 }
 
