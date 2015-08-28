@@ -1,11 +1,25 @@
 package pl.typosafe.scala.meta.macropub
 
+import pl.typosafe.scala.meta.customer.{Customer, HasId}
 import pl.typosafe.scala.meta.pub.Pub.Bartender
-import pl.typosafe.scala.meta.pub.menu.Drink
+import pl.typosafe.scala.meta.pub.ToYoungToDrink
+import pl.typosafe.scala.meta.pub.menu.{Alcoholic, Drink, NoId}
 
 import scala.reflect.macros.whitebox.Context
 
 object MacroPub {
+
+  def checkAge(customer: Option[Customer], drink: Drink): Drink = drink match {
+    case a: Alcoholic =>
+      customer match {
+        case Some(withId: HasId) =>
+          if (withId.ageFromId >= 18) drink
+          else throw new ToYoungToDrink(withId.ageFromId)
+        case _ => throw NoId
+      }
+    case _ => drink
+  }
+
 
   def pubMacro(c: Context)(makeOrder: c.Expr[(Bartender) => Unit]): c.Expr[Seq[Drink]] = {
     import c.universe._
@@ -23,11 +37,20 @@ object MacroPub {
       }
     }
 
+
+    val customer = c.prefix.tree match {
+      case Apply(_, List(customerFromContext)) =>
+        q"Option($customerFromContext)"
+      case _ =>
+        q"None"
+    }
+
     val transformer = new Transformer {
       override def transform(tree: c.universe.Tree): c.universe.Tree = tree match {
         case Order(func, drink) =>
           val newDrinkOrder = q"""
-                                  if (Pub.serves.contains($drink)) $drink
+                                  if (Pub.serves.contains($drink))
+                                    MacroPub.checkAge($customer, $drink)
                                   else throw new NoSuchDrinkInMenu($drink)
                               """
           c.typecheck(Apply(super.transform(func), List(newDrinkOrder)))
