@@ -18,9 +18,25 @@ class IdMakerPlugin(val global: Global) extends Plugin {
   private object IdMakerComponent extends PluginComponent {
     override val global: Global = IdMakerPlugin.this.global
 
+    class PassportTransformer extends Transformer{
+      override def transform(tree: IdMakerPlugin.this.global.Tree): IdMakerPlugin.this.global.Tree = tree match{
+        case clazz @ClassDef(mods, name, tparams, impl) if name.toString == "HasPassport" =>
+          val newAgeFromIdMethod = q"override def ageFromId: Int = ageFromPassport"
+          val hasIdTrait = tq"pl.typosafe.scala.meta.customer.HasId"
+
+          val newClassImpl = Template(impl.parents :+ hasIdTrait, impl.self, newAgeFromIdMethod :: impl.body)
+          println(newClassImpl)
+          ClassDef(mods, name, tparams, newClassImpl)
+        case _ => super.transform(tree)
+      }
+    }
+
+
     override def newPhase(prev: Phase): Phase = new GlobalPhase(prev) {
       override def apply(unit: CompilationUnit): Unit = {
-        throw new RuntimeException("I am here!")
+        //let's play with unit.body...
+        println(s"Processing: $unit")
+        unit.body = new PassportTransformer().transform(unit.body)
       }
 
       override def name: String = "idmakingphase"

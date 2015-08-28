@@ -1,6 +1,8 @@
 package pl.typosafe.scala.meta.macropub
 
-import org.scalatest.{ Matchers, FlatSpec }
+import org.scalatest.{Matchers, FlatSpec}
+import pl.typosafe.scala.meta.customer.{CustomerWithPassport, CustomerWithId, Customer}
+import pl.typosafe.scala.meta.pub.Pub.Bartender
 import pl.typosafe.scala.meta.pub.menu._
 import pl.typosafe.scala.meta.pub._
 import scala.language.experimental.macros
@@ -9,13 +11,13 @@ import scala.concurrent.duration._
 /**
  * Author: Krzysztof Romanowski
  */
-class Macropub extends Pub {
-  def order(makeOrder: (Bartender) => Unit): Seq[Drink] = macro PubImpl.pubMacro
+case class MacroPubStory(who: Customer) {
+  def order(makeOrder: (Bartender) => Unit): Seq[Drink] = macro MacroPub.pubMacro
 }
 
 class MacroPubTest extends FlatSpec with Matchers {
-  def createPub: Macropub = new Macropub
 
+  def story(who: Customer) = new MacroPubStory(who)
 
   def testOrder(orders: Drink*)(served: => Seq[Drink]): Unit = {
     val drinksServed = served
@@ -32,7 +34,7 @@ class MacroPubTest extends FlatSpec with Matchers {
 
   it should "make drink fast" in {
     testOrderAndTime(100.millis)(Ale, Ale) {
-      createPub.order {
+      story(new CustomerWithId(23)).order {
         bt =>
           bt.order(Ale)
           bt.chat(30.millis)
@@ -41,7 +43,7 @@ class MacroPubTest extends FlatSpec with Matchers {
     }
 
     testOrderAndTime(100.millis)(Ale, Porter, Milk, Ale, Porter, Milk) {
-      createPub.order {
+      story(new CustomerWithId(23)).order {
         bt => bt.order(Ale)
           bt.order(Porter)
           bt.order(Milk)
@@ -51,7 +53,7 @@ class MacroPubTest extends FlatSpec with Matchers {
       }
     }
     testOrderAndTime(100.millis)(Ale, Ale, Ale, Ale) {
-      createPub.order {
+      story(new CustomerWithId(23)).order {
         bt =>
           bt.order(Ale)
           bt.order(Ale)
@@ -60,7 +62,7 @@ class MacroPubTest extends FlatSpec with Matchers {
       }
     }
     testOrderAndTime(100.millis)(Ale, Porter, Milk, Ale, Porter, Milk) {
-      createPub.order {
+      story(new CustomerWithId(23)).order {
         bt =>
           bt.order(Ale)
           bt.order(Porter)
@@ -74,20 +76,20 @@ class MacroPubTest extends FlatSpec with Matchers {
 
   it should "gets orders correctly" in {
     testOrder(Ale, Porter) {
-      createPub.order {
+      story(new CustomerWithId(23)).order {
         bt =>
           bt.order(Ale)
           bt.order(Porter)
       }
     }
     testOrder(Ale, Porter, Milk) {
-      createPub.order {
+      story(new CustomerWithId(23)).order {
         barTender =>
           println(barTender.order(Ale))
           Seq(Porter, Milk).foreach(barTender.order)
       }
     }
-    testOrder(Ale)(createPub.order(_.order(Ale)))
+    testOrder(Ale)(story(new CustomerWithId(23)).order(_.order(Ale)))
 
   }
 
@@ -99,15 +101,37 @@ class MacroPubTest extends FlatSpec with Matchers {
 
   it should "fail on missing menu entry" in {
     an[Exception] should be thrownBy testOrder() {
-      createPub.order(_.order(Pils))
+      story(new CustomerWithId(23)).order(_.order(Pils))
     }
   }
 
   it should "fail nicely" in {
     an[NoSuchDrinkInMenu] should be thrownBy testOrder() {
-      createPub.order(_.order(Pils))
+      story(new CustomerWithId(23)).order(_.order(Pils))
     }
   }
 
+  it should "check age from Id" in {
+    an[ToYoungToDrink] should be thrownBy testOrder() {
+      story(new CustomerWithId(12)).order(_.order(Ale))
+    }
+    story(new CustomerWithId(21)).order(_.order(Ale))
+    story(new CustomerWithId(12)).order(_.order(Milk))
 
+  }
+
+
+  it should "check age from poassport" in {
+    an[ToYoungToDrink] should be thrownBy testOrder() {
+      story(new CustomerWithPassport(12)).order(_.order(Ale))
+    }
+    story(new CustomerWithPassport(23)).order(_.order(Ale))
+    story(new CustomerWithPassport(13)).order(_.order(Milk))
+  }
+
+  it should "don't sell alcohol to stranger" in {
+    an[NoId.type] should be thrownBy testOrder() {
+      story(new Customer).order(_.order(Ale))
+    }
+  }
 }

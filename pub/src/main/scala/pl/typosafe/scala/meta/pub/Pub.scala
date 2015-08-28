@@ -6,7 +6,21 @@ import scala.collection.SortedMap
 import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 
-abstract class Pub() {
+object Pub {
+
+  final class Bartender private[Pub] () {
+
+    private var orders: Seq[Drink] = Nil
+
+    def order(drink: Drink): Unit = {
+      Pub.prepare(drink)
+      orders = drink +: orders
+    }
+
+    def chat(time: Duration) = Thread.sleep(time.toMillis)
+
+    private[pub] def wholeOrder: Seq[Drink] = orders
+  }
 
   def serves: Map[Drink, Duration] = Map(
     Ale -> 40.millis,
@@ -14,12 +28,14 @@ abstract class Pub() {
     Milk -> 20.millis
   )
 
-  private[pub] final def prepare(drink: Drink): Unit = {
+  private final def prepare(drink: Drink): Unit = {
     val timeToPrepare = serves(drink).toMillis
     Thread.sleep(timeToPrepare)
   }
 
-  protected final def askBartender = new Bartender(this)
+  final def askBartender() = new Bartender
+
+  def finalizeOrder(bt: Bartender): Seq[Drink] = bt.wholeOrder
 }
 
 case class NoSuchDrinkInMenu(drink: Drink) extends RuntimeException(s"$drink: No such drink in menu. Sorry")

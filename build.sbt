@@ -21,17 +21,26 @@ def globalSettings = Seq(
   libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersionString
 )
 
+addCommandAlias("testCompilerPlugin", ";clean;pluginPub/package;test")
+addCommandAlias("runCompilerPlugin", ";clean;pluginPub/package;compile")
+addCommandAlias("initCompilerPlugin", ";clean;pluginPub/package;reload")
+addCommandAlias("testPub", ";macropub/clean;macropub/test")
+
+addCommandAlias("tp", "testPub")
+addCommandAlias("icp", "initCompilerPlugin")
+addCommandAlias("tcp", "testCompilerPlugin")
+addCommandAlias("rcp", "runCompilerPlugin")
 
 lazy val pluginPub = project settings (globalSettings: _*)
 
 val location = "pluginPub/target/scala-2.11/"
 
-val pluginLocation = (file("pluginPub") / "target" / "scala-2.11" ** "*.jar").get.head.getAbsolutePath
+def pluginLocation = (file("pluginPub") / "target" / "scala-2.11" ** "*.jar").get.headOption.map(_.getAbsolutePath).orElse{
+  println("No plugin")
+  None
+}
 
-def withPubPlugin = Seq(
-  unmanagedJars +=
-  scalacOptions += "-Xplugin"
-)
+def withPubPlugin = pluginLocation.toList.map(path => scalacOptions += s"-Xplugin:$path")
 
 
 lazy val pub = project dependsOn pluginPub settings (globalSettings: _*) settings (withPubPlugin: _*)

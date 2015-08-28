@@ -1,13 +1,7 @@
-package pl.typosafe.scala.meta.customer
+package pl.typosafe.scala.meta
+package customer
 
-import pl.typosafe.scala.meta.pub.menu.Drink
-import pl.typosafe.scala.meta.pub.{ Bartender, Pub }
-
-/**
- * Author: Krzysztof Romanowski
- */
-trait Customer {
-  def wants: Drink
+class Customer {
 }
 
 trait HasId {
@@ -20,11 +14,9 @@ trait HasPassport {
   def age = 25
 }
 
-case class AnyCustomer(wants: Drink) extends Customer
+case class LocalCustomer(age: Int) extends Customer
 
-case class LocalCustomer(wants: Drink, age: Int) extends Customer
+case class CustomerWithId(ageFromId: Int) extends Customer with HasId
 
-case class CustomerWithId(wants: Drink, ageFromId: Int) extends Customer with HasId
-
-case class CustomerWithPassport(wants: Drink, ageFromPassport: Int) extends Customer with HasPassport
+case class CustomerWithPassport(ageFromPassport: Int) extends Customer with HasPassport
 
